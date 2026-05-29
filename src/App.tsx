@@ -5,6 +5,7 @@ import {
   FolderOpen,
   Save,
   FilePlus,
+  FileText,
   CheckCircle2,
   AlertTriangle,
   type LucideIcon,
@@ -77,6 +78,17 @@ export default function App() {
       showFlash(`Kaydedildi: ${res.record.ad}`);
     } else {
       showFlash("Kaydedilemedi: " + (res.error ?? "bilinmeyen hata"), false);
+    }
+  };
+
+  const handlePdf = async () => {
+    showFlash("PDF hazırlanıyor…");
+    try {
+      const { generateReport } = await import("./pdf/generateReport");
+      await generateReport(state, r);
+      showFlash("PDF indirildi");
+    } catch (e) {
+      showFlash("PDF oluşturulamadı: " + (e instanceof Error ? e.message : String(e)), false);
     }
   };
 
@@ -268,6 +280,9 @@ export default function App() {
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               <button onClick={handleNew} style={ghostBtn}>
                 <FilePlus size={15} /> Yeni
+              </button>
+              <button onClick={handlePdf} style={ghostBtn}>
+                <FileText size={15} /> PDF
               </button>
               <button onClick={handleSave} style={primaryBtn}>
                 <Save size={15} /> Kaydet
