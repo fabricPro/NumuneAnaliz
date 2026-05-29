@@ -8,3 +8,13 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+// PWA: service worker kaydi (telefonda "uygulama olarak yukle" icin gerekli).
+// Sadece production build'de — dev'de HMR onbellek cakismasini onlemek icin.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .catch(() => {});
+  });
+}
