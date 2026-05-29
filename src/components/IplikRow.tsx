@@ -59,6 +59,12 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
   const iplikNo = (
     <span style={{ display: "block", marginTop: 4, fontSize: 10, color: C.dim }}>
       → no {fmt(denye, 0)} · {kat} kat
+      {olcumDolu && (
+        <span style={{ color }}>
+          {"  ·  ölçüm "}
+          {fmt(num(row.olcum.uzunluk), 0)}cm×{fmt(num(row.olcum.adet), 0)} / {fmt(num(row.olcum.agirlik), 1)}mg
+        </span>
+      )}
     </span>
   );
 

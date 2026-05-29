@@ -2,16 +2,17 @@ import "./font";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { AnalizState, CalcResult, Iplik } from "../lib/types";
 import { num, parseIplikRaw, tukH, atkiGramaj, cekmeOran } from "../lib/calc";
-import { fmt } from "../lib/format";
+import { nf } from "../lib/format";
 
 const P = {
   text: "#0f172a",
   muted: "#64748b",
   line: "#cbd5e1",
-  lineDark: "#475569",
   bgMuted: "#eef2f7",
   bgRow: "#f8fafc",
   accent: "#3b6fd4",
+  accentDark: "#27468f",
+  headerBg: "#eef3fc",
   warp: "#b9791a",
   weft: "#2e8a7f",
   ok: "#16a34a",
@@ -26,40 +27,34 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
-    borderBottomWidth: 2,
-    borderBottomColor: P.accent,
-    paddingBottom: 8,
-    marginBottom: 12,
-  },
-  brand: { fontSize: 18, fontWeight: 700, color: P.accent, letterSpacing: 0.5 },
-  brandSub: { fontSize: 9, color: P.muted, marginTop: 2 },
-  metaRight: { textAlign: "right", fontSize: 9 },
-  metaName: { fontSize: 12, fontWeight: 700 },
-  metaLine: { color: P.muted, marginTop: 2 },
-
-  // Sonuç şeridi
-  statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  stat: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: P.line,
+    alignItems: "flex-start",
+    backgroundColor: P.headerBg,
+    borderLeftWidth: 4,
+    borderLeftColor: P.accent,
     borderRadius: 6,
-    padding: 8,
-    backgroundColor: P.bgRow,
+    padding: 12,
+    marginBottom: 14,
   },
+  brand: { fontSize: 20, fontWeight: 700, color: P.accentDark, letterSpacing: 0.5 },
+  brandSub: { fontSize: 9, color: P.muted, marginTop: 3 },
+  metaRight: { textAlign: "right" },
+  metaName: { fontSize: 12, fontWeight: 700, color: P.text },
+  metaLine: { fontSize: 9, color: P.muted, marginTop: 2 },
+
+  statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
+  stat: { flex: 1, borderWidth: 1, borderColor: P.line, borderRadius: 6, padding: 8, backgroundColor: P.bgRow },
   statLabel: { fontSize: 8, color: P.muted, textTransform: "uppercase", letterSpacing: 0.4 },
-  statValue: { fontSize: 18, fontWeight: 700, marginTop: 3 },
+  statValue: { fontSize: 17, fontWeight: 700, marginTop: 3 },
   statUnit: { fontSize: 8, color: P.muted, fontWeight: 400 },
   durumPill: {
     alignSelf: "flex-start",
     color: P.white,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: 700,
     paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    marginTop: 4,
+    paddingHorizontal: 7,
+    borderRadius: 9,
+    marginTop: 5,
   },
 
   section: { marginBottom: 12 },
@@ -75,24 +70,21 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // Tablo
-  table: { borderWidth: 1, borderColor: P.line, borderRadius: 4, marginBottom: 6 },
+  table: { borderWidth: 1, borderColor: P.line, borderRadius: 4, marginBottom: 4 },
   tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: P.line },
   trLast: { borderBottomWidth: 0 },
   trHead: { backgroundColor: P.bgMuted },
   trTotal: { backgroundColor: P.bgRow },
   th: { fontSize: 8, fontWeight: 700, color: P.muted, padding: 4 },
   td: { fontSize: 9, padding: 4 },
+  sub: { fontSize: 7.5, marginTop: 1 },
   right: { textAlign: "right" },
 
-  // İki kolon
-  twoCol: { flexDirection: "row", gap: 10 },
+  twoCol: { flexDirection: "row", gap: 12 },
   col: { flex: 1 },
-
   kv: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
   kvLabel: { color: P.muted },
   kvVal: { fontWeight: 700 },
-
   note: { fontSize: 8, color: P.muted, marginTop: 2 },
 
   photoWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
@@ -114,11 +106,11 @@ const s = StyleSheet.create({
 });
 
 const COLS = [
-  { key: "tip", label: "Tip", flex: 1.2 },
-  { key: "no", label: "İplik (no × kat)", flex: 1.9 },
-  { key: "sik", label: "Sıklık", flex: 1.1, right: true },
-  { key: "fiyat", label: "Fiyat $/kg", flex: 1.2, right: true },
-  { key: "gramaj", label: "Gramaj g/mt", flex: 1.3, right: true },
+  { key: "tip", label: "Tip", flex: 1.1 },
+  { key: "no", label: "İplik (no × kat)", flex: 2.2 },
+  { key: "sik", label: "Sıklık", flex: 1.0, right: true },
+  { key: "fiyat", label: "Fiyat $/kg", flex: 1.1, right: true },
+  { key: "gramaj", label: "Gramaj g/mt", flex: 1.2, right: true },
 ];
 
 function IplikTablo({
@@ -144,7 +136,11 @@ function IplikTablo({
       ? atkiGramaj(row.tip, denye, kat, tel, tarakEn, fak)
       : tukH(row.tip, denye, kat, tel, fak);
     toplam += g;
-    return { row, denye, kat, g };
+    const adFirma = [row.info?.iplikAdi, row.info?.firmaAdi].filter(Boolean).join(" · ");
+    const uz = num(row.olcum?.uzunluk);
+    const ag = num(row.olcum?.agirlik);
+    const olculdu = uz > 0 && ag > 0;
+    return { row, denye, kat, g, adFirma, uz, ag, olculdu };
   });
 
   return (
@@ -158,21 +154,29 @@ function IplikTablo({
             </Text>
           ))}
         </View>
-        {data.map(({ row, denye, kat, g }, i) => (
+        {data.map(({ row, denye, kat, g, adFirma, uz, ag, olculdu }, i) => (
           <View key={row.id} style={[s.tr, i === data.length - 1 ? s.trLast : {}]}>
             <Text style={[s.td, { flex: COLS[0].flex }]}>{row.tip}</Text>
-            <Text style={[s.td, { flex: COLS[1].flex }]}>
-              {fmt(denye, 0)} × {kat}
-            </Text>
-            <Text style={[s.td, { flex: COLS[2].flex }, s.right]}>{fmt(num(row.sik), 1)}</Text>
-            <Text style={[s.td, { flex: COLS[3].flex }, s.right]}>{fmt(num(row.fiyat), 2)}</Text>
-            <Text style={[s.td, { flex: COLS[4].flex }, s.right]}>{fmt(g, 1)}</Text>
+            <View style={{ flex: COLS[1].flex, padding: 4 }}>
+              <Text style={{ fontSize: 9 }}>
+                {nf(denye, 0)} × {kat}
+              </Text>
+              {adFirma ? <Text style={[s.sub, { color: P.muted }]}>{adFirma}</Text> : null}
+              {olculdu ? (
+                <Text style={[s.sub, { color: P.accent }]}>
+                  ölçüm: {nf(uz, 0)} cm × {nf(num(row.olcum.adet), 0)} / {nf(ag, 1)} mg
+                </Text>
+              ) : null}
+            </View>
+            <Text style={[s.td, { flex: COLS[2].flex }, s.right]}>{nf(num(row.sik), 1)}</Text>
+            <Text style={[s.td, { flex: COLS[3].flex }, s.right]}>{nf(num(row.fiyat), 2)}</Text>
+            <Text style={[s.td, { flex: COLS[4].flex }, s.right]}>{nf(g, 1)}</Text>
           </View>
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
         <Text style={{ fontSize: 9, fontWeight: 700 }}>
-          Toplam {baslik.toLowerCase()} gramaj: {fmt(toplam, 1)} g/mt
+          Toplam {baslik.toLowerCase()} gramaj: {nf(toplam, 1)} g/mt
         </Text>
       </View>
     </View>
@@ -206,7 +210,7 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           : { t: "Tutmuyor — gözden geçir", c: P.bad };
 
   const tumIplikler = [...state.cozgu, ...state.atki];
-  const infoVar = tumIplikler.some((it) => it.info && (it.info.iplikAdi || it.info.firmaAdi || it.info.fason));
+  const fasonlu = tumIplikler.filter((it) => it.info?.fason);
 
   const maliyetKalemleri: Array<[string, number]> = [
     ["İplik (çözgü + atkı)", r.topI],
@@ -217,18 +221,17 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
   ];
 
   const parametreler: Array<[string, string]> = [
-    ["Tezgah devri", `${fmt(num(state.params.devir), 0)} rpm`],
-    ["Randıman", `% ${fmt(num(state.params.randiman), 0)}`],
-    ["Terbiye fiyat", `${fmt(num(state.params.terbiyeFiyat), 2)} $/kg`],
-    ["Genel fire", `% ${fmt(num(state.params.genelFire), 1)}`],
-    ["Kurşum + sabit", `${fmt(num(state.params.kursum), 2)} $/mt`],
-    ["Ek malzeme", `${fmt(num(state.params.ekMal), 2)} $/mt`],
+    ["Tezgah devri", `${nf(num(state.params.devir), 0)} rpm`],
+    ["Randıman", `% ${nf(num(state.params.randiman), 1)}`],
+    ["Terbiye fiyat", `${nf(num(state.params.terbiyeFiyat), 2)} $/kg`],
+    ["Genel fire", `% ${nf(num(state.params.genelFire), 1)}`],
+    ["Kurşum + sabit", `${nf(num(state.params.kursum), 2)} $/mt`],
+    ["Ek malzeme", `${nf(num(state.params.ekMal), 2)} $/mt`],
   ];
 
   return (
     <Document title={`Numune Raporu — ${state.meta.numuneAd || "Numune"}`}>
       <Page size="A4" style={s.page}>
-        {/* Header */}
         <View style={s.header}>
           <View>
             <Text style={s.brand}>TexAI</Text>
@@ -241,73 +244,69 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           </View>
         </View>
 
-        {/* Sonuç şeridi */}
         <View style={s.statRow}>
-          <Stat label="Toplam maliyet" value={fmt(r.total, 3)} unit="$/mt" color={P.accent} />
-          <Stat label="Hesaplanan" value={fmt(r.hesapM2, 1)} unit="g/m²" />
-          <Stat label="Ölçülen" value={r.olcumM2 > 0 ? fmt(r.olcumM2, 1) : "—"} unit="g/m²" />
+          <Stat label="Toplam maliyet" value={nf(r.total, 3)} unit="$/mt" color={P.accentDark} />
+          <Stat label="Hesaplanan" value={nf(r.hesapM2, 1)} unit="g/m²" />
+          <Stat label="Ölçülen" value={r.olcumM2 > 0 ? nf(r.olcumM2, 1) : "—"} unit="g/m²" />
           <View style={s.stat}>
             <Text style={s.statLabel}>Sapma</Text>
             <Text style={[s.statValue, { color: durum.c }]}>
-              {r.sapma == null ? "—" : `${r.sapma > 0 ? "+" : ""}${fmt(r.sapma, 1)}`}
+              {r.sapma == null ? "—" : `${r.sapma > 0 ? "+" : ""}${nf(r.sapma, 1)}`}
               <Text style={s.statUnit}> %</Text>
             </Text>
             <Text style={[s.durumPill, { backgroundColor: durum.c }]}>{durum.t}</Text>
           </View>
         </View>
 
-        {/* Kompozisyon */}
         <View style={s.section}>
           <Text style={s.secTitle}>Kompozisyon</Text>
           <Text style={s.note}>
-            Tarak eni {fmt(tarakEn, 0)} cm · Mamul eni {fmt(num(state.olcum.mamulEn), 0)} cm
+            Tarak eni {nf(tarakEn, 0)} cm · Mamul eni {nf(num(state.olcum.mamulEn), 0)} cm
           </Text>
           <View style={{ height: 4 }} />
           <IplikTablo rows={state.cozgu} baslik="Çözgü" renk={P.warp} atki={false} tarakEn={tarakEn} fak={r.cozguFak} />
           <IplikTablo rows={state.atki} baslik="Atkı" renk={P.weft} atki={true} tarakEn={tarakEn} fak={r.atkiFak} />
         </View>
 
-        {/* Maliyet dökümü */}
         <View style={s.section}>
           <Text style={s.secTitle}>Maliyet Dökümü</Text>
           <View style={s.table}>
             {maliyetKalemleri.map(([label, val]) => (
               <View key={label} style={s.tr}>
                 <Text style={[s.td, { flex: 4 }]}>{label}</Text>
-                <Text style={[s.td, { flex: 1.4 }, s.right]}>{fmt(val, 3)} $</Text>
+                <Text style={[s.td, { flex: 1.4 }, s.right]}>{nf(val, 3)} $</Text>
               </View>
             ))}
             <View style={[s.tr, s.trTotal, s.trLast]}>
               <Text style={[s.td, { flex: 4, fontWeight: 700 }]}>TOPLAM</Text>
-              <Text style={[s.td, { flex: 1.4, fontWeight: 700, color: P.accent }, s.right]}>
-                {fmt(r.total, 3)} $/mt
+              <Text style={[s.td, { flex: 1.4, fontWeight: 700, color: P.accentDark }, s.right]}>
+                {nf(r.total, 3)} $/mt
               </Text>
             </View>
           </View>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <Text style={s.note}>
-              Gramaj: {fmt(r.grmt, 1)} g/mt (çözgü {fmt(r.grmtCozgu, 1)} · atkı {fmt(r.grmtAtki, 1)})
+              Gramaj: {nf(r.grmt, 1)} g/mt (çözgü {nf(r.grmtCozgu, 1)} · atkı {nf(r.grmtAtki, 1)})
             </Text>
-            <Text style={s.note}>Kapasite: {fmt(r.uAy, 0)} mt/ay</Text>
+            <Text style={s.note}>Kapasite: {nf(r.uAy, 0)} mt/ay</Text>
           </View>
         </View>
 
-        {/* Çekme + Parametreler (iki kolon) */}
         <View style={[s.section, s.twoCol]}>
           <View style={s.col}>
             <Text style={s.secTitle}>Çekme</Text>
             <View style={s.kv}>
               <Text style={s.kvLabel}>Çözgü çekmesi</Text>
               <Text style={s.kvVal}>
-                % {fmt(cekmeOran(num(state.cekme.cozgu.lDuz), num(state.cekme.cozgu.lKumas)) * 100, 1)} (×
-                {fmt(r.cozguFak, 3)})
+                % {nf(cekmeOran(num(state.cekme.cozgu.lDuz), num(state.cekme.cozgu.lKumas)) * 100, 1)} (×
+                {nf(r.cozguFak, 3)})
               </Text>
             </View>
             <View style={s.kv}>
               <Text style={s.kvLabel}>Atkı çekmesi</Text>
               <Text style={s.kvVal}>
-                % {fmt(cekmeOran(num(state.cekme.atki.lDuz), num(state.cekme.atki.lKumas)) * 100, 1)} (×
-                {fmt(r.atkiFak, 3)})
+                % {nf(cekmeOran(num(state.cekme.atki.lDuz), num(state.cekme.atki.lKumas)) * 100, 1)} (×
+                {nf(r.atkiFak, 3)})
               </Text>
             </View>
           </View>
@@ -322,29 +321,21 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           </View>
         </View>
 
-        {/* İplik bilgileri (info / fason) */}
-        {infoVar && (
+        {fasonlu.length > 0 && (
           <View style={s.section}>
-            <Text style={s.secTitle}>İplik Bilgileri (fason dahil — maliyete dahil değil)</Text>
-            {tumIplikler
-              .filter((it) => it.info && (it.info.iplikAdi || it.info.firmaAdi || it.info.fason))
-              .map((it) => (
-                <View key={it.id} style={{ marginBottom: 4 }}>
-                  <Text style={{ fontWeight: 700 }}>
-                    {it.info.iplikAdi || "(adsız iplik)"} {it.info.firmaAdi ? `· ${it.info.firmaAdi}` : ""}
-                  </Text>
-                  {it.info.fason && (
-                    <Text style={s.note}>
-                      Fason: {it.info.fasonFirma || "—"} · İşlem: {it.info.fasonIslem || "—"} · Fiyat:{" "}
-                      {it.info.fasonFiyat || "—"}
-                    </Text>
-                  )}
-                </View>
-              ))}
+            <Text style={s.secTitle}>Fason İşlemler (bilgi — maliyete dahil değil)</Text>
+            {fasonlu.map((it) => (
+              <View key={it.id} style={s.kv}>
+                <Text style={s.kvLabel}>{it.info.iplikAdi || it.info.firmaAdi || "İplik"}</Text>
+                <Text style={s.kvVal}>
+                  {it.info.fasonFirma || "—"} · {it.info.fasonIslem || "—"}
+                  {it.info.fasonFiyat ? ` · ${it.info.fasonFiyat}` : ""}
+                </Text>
+              </View>
+            ))}
           </View>
         )}
 
-        {/* Fotoğraflar */}
         {state.photos.length > 0 && (
           <View style={s.section} wrap={false}>
             <Text style={s.secTitle}>Fotoğraflar</Text>
@@ -356,12 +347,9 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           </View>
         )}
 
-        {/* Footer */}
         <View style={s.footer} fixed>
           <Text>TexAI · Numune Analiz & Maliyet</Text>
-          <Text
-            render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
-          />
+          <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
         </View>
       </Page>
     </Document>

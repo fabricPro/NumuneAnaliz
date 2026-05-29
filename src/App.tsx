@@ -54,6 +54,8 @@ export default function App() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [flash, setFlash] = useState<{ text: string; ok: boolean } | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfName, setPdfName] = useState("rapor.pdf");
   const flashTimer = useRef<number | undefined>(undefined);
 
   const set = (patch: Partial<AnalizState>) => setState((s) => ({ ...s, ...patch }));
@@ -84,12 +86,30 @@ export default function App() {
   const handlePdf = async () => {
     showFlash("PDF hazırlanıyor…");
     try {
-      const { generateReport } = await import("./pdf/generateReport");
-      await generateReport(state, r);
-      showFlash("PDF indirildi");
+      const { buildReportBlob, reportFilename } = await import("./pdf/generateReport");
+      const blob = await buildReportBlob(state, r);
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(URL.createObjectURL(blob));
+      setPdfName(reportFilename(state));
+      setFlash(null);
     } catch (e) {
       showFlash("PDF oluşturulamadı: " + (e instanceof Error ? e.message : String(e)), false);
     }
+  };
+
+  const closePdf = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
+
+  const downloadPdf = () => {
+    if (!pdfUrl) return;
+    const a = document.createElement("a");
+    a.href = pdfUrl;
+    a.download = pdfName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   const handleNew = () => {
@@ -309,6 +329,42 @@ export default function App() {
           />
         )}
       </div>
+
+      {pdfUrl && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            background: "rgba(0,0,0,0.72)",
+            display: "flex",
+            flexDirection: "column",
+            padding: isMobile ? 8 : 20,
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>PDF Önizleme</span>
+            <span style={{ fontSize: 11, color: "#cbd5e1" }}>{pdfName}</span>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <button onClick={downloadPdf} style={primaryBtn}>
+                <FileText size={15} /> İndir
+              </button>
+              <button
+                onClick={closePdf}
+                style={{ ...ghostBtn, color: "#fff", borderColor: "#ffffff55" }}
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+          <iframe
+            title="PDF önizleme"
+            src={pdfUrl}
+            style={{ flex: 1, width: "100%", border: "none", borderRadius: 8, background: "#fff" }}
+          />
+        </div>
+      )}
     </div>
   );
 }
