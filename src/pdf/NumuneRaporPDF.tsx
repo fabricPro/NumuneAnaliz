@@ -37,13 +37,13 @@ const s = StyleSheet.create({
     marginBottom: 14,
   },
   brand: { fontSize: 20, fontWeight: 700, color: P.accentDark, letterSpacing: 0.5 },
-  brandSub: { fontSize: 9, color: P.muted, marginTop: 3 },
+  brandSub: { fontSize: 9, color: P.muted, marginTop: 8 },
   metaRight: { textAlign: "right" },
   metaName: { fontSize: 12, fontWeight: 700, color: P.text },
   metaLine: { fontSize: 9, color: P.muted, marginTop: 2 },
 
   statRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  stat: { flex: 1, borderWidth: 1, borderColor: P.line, borderRadius: 6, padding: 8, backgroundColor: P.bgRow },
+  stat: { flex: 1, borderWidth: 1, borderColor: P.line, borderRadius: 6, paddingTop: 8, paddingBottom: 12, paddingHorizontal: 8, backgroundColor: P.bgRow },
   statLabel: { fontSize: 8, color: P.muted, textTransform: "uppercase", letterSpacing: 0.4 },
   statValue: { fontSize: 17, fontWeight: 700, marginTop: 3 },
   statUnit: { fontSize: 8, color: P.muted, fontWeight: 400 },
@@ -55,7 +55,8 @@ const s = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 7,
     borderRadius: 9,
-    marginTop: 5,
+    marginTop: 7,
+    marginBottom: 2,
   },
 
   section: { marginBottom: 12 },
@@ -233,6 +234,73 @@ function MatrixGrid({
           ))}
         </View>
       ))}
+    </View>
+  );
+}
+
+const AXIS_W = 12;
+const AXIS_FS = 6;
+const AXIS_COLOR = "#666";
+
+function LabeledMatrixGrid({
+  rows,
+  cols,
+  isOn,
+  fill,
+  size,
+  leftLabels,
+  bottomLabels,
+}: {
+  rows: number;
+  cols: number;
+  isOn: (r: number, c: number) => boolean;
+  fill: (r: number, c: number) => string;
+  size: number;
+  /** length = rows; rendered top-to-bottom (index 0 = top row) */
+  leftLabels?: (string | number)[];
+  /** length = cols; rendered left-to-right (index 0 = left column) */
+  bottomLabels?: (string | number)[];
+}) {
+  return (
+    <View>
+      <View style={{ flexDirection: "row" }}>
+        {leftLabels && (
+          <View style={{ flexDirection: "column", marginRight: 2 }}>
+            {leftLabels.map((label, i) => (
+              <View
+                key={i}
+                style={{
+                  width: AXIS_W,
+                  height: size,
+                  alignItems: "flex-end",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: AXIS_FS, color: AXIS_COLOR }}>{String(label)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <MatrixGrid rows={rows} cols={cols} isOn={isOn} fill={fill} size={size} />
+      </View>
+      {bottomLabels && (
+        <View style={{ flexDirection: "row", marginTop: 1 }}>
+          {leftLabels && <View style={{ width: AXIS_W + 2 }} />}
+          {bottomLabels.map((label, i) => (
+            <View
+              key={i}
+              style={{
+                width: size,
+                height: AXIS_FS + 4,
+                alignItems: "center",
+                justifyContent: "flex-start",
+              }}
+            >
+              <Text style={{ fontSize: AXIS_FS, color: AXIS_COLOR }}>{String(label)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -416,14 +484,31 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
             fill={() => P.accent}
           />
 
-          <Text style={s.gridTitle}>Armür (çerçeve × atkı)</Text>
-          <MatrixGrid
-            rows={dd.weftCount}
-            cols={dd.frameCount}
-            size={fitSize(dd.frameCount)}
-            isOn={(rr, cc) => Boolean(dd.armur[cc]?.[dd.weftCount - 1 - rr])}
-            fill={() => P.accent}
-          />
+          <View style={{ flexDirection: "row", gap: 18, marginTop: 6 }}>
+            <View>
+              <Text style={s.gridTitle}>Armür (çerçeve × atkı)</Text>
+              <LabeledMatrixGrid
+                rows={dd.weftCount}
+                cols={dd.frameCount}
+                size={fitSize(dd.frameCount)}
+                isOn={(rr, cc) => Boolean(dd.armur[cc]?.[dd.weftCount - 1 - rr])}
+                fill={() => P.accent}
+                leftLabels={Array.from({ length: dd.weftCount }, (_, i) => dd.weftCount - i)}
+                bottomLabels={Array.from({ length: dd.frameCount }, (_, i) => i + 1)}
+              />
+            </View>
+            <View>
+              <Text style={s.gridTitle}>Atkı Raporu (iro / renk)</Text>
+              <LabeledMatrixGrid
+                rows={dd.weftCount}
+                cols={dd.iroCount}
+                size={fitSize(dd.iroCount)}
+                isOn={(rr, cc) => dd.iroData[dd.weftCount - 1 - rr] === cc + 1}
+                fill={(_rr, cc) => IRO_COLORS[cc % IRO_COLORS.length]}
+                bottomLabels={Array.from({ length: dd.iroCount }, (_, i) => i + 1)}
+              />
+            </View>
+          </View>
 
           <Text style={s.gridTitle}>Desen (otomatik)</Text>
           <MatrixGrid
@@ -436,15 +521,6 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
               )
             }
             fill={() => "#111111"}
-          />
-
-          <Text style={s.gridTitle}>Atkı Raporu (iro / renk)</Text>
-          <MatrixGrid
-            rows={dd.weftCount}
-            cols={dd.iroCount}
-            size={fitSize(dd.iroCount)}
-            isOn={(rr, cc) => dd.iroData[dd.weftCount - 1 - rr] === cc + 1}
-            fill={(_rr, cc) => IRO_COLORS[cc % IRO_COLORS.length]}
           />
 
           <View style={s.footer} fixed>
