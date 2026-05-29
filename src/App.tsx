@@ -1,44 +1,128 @@
-import { useMemo, useState } from "react";
-import { Ruler, Calculator, type LucideIcon } from "lucide-react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  Ruler,
+  Calculator,
+  FolderOpen,
+  Save,
+  FilePlus,
+  CheckCircle2,
+  AlertTriangle,
+  type LucideIcon,
+} from "lucide-react";
 import { calcAll } from "./lib/calc";
 import { yeniIplik } from "./lib/factory";
 import type { AnalizState } from "./lib/types";
+import { listRecords, saveRecord, deleteRecord, type SavedRecord } from "./lib/storage";
 import { C } from "./theme";
 import { useIsMobile } from "./lib/useIsMobile";
 import { AnalizTab } from "./components/AnalizTab";
 import { MaliyetTab } from "./components/MaliyetTab";
+import { KayitlarTab } from "./components/KayitlarTab";
 
-type Tab = "analiz" | "maliyet";
+type Tab = "analiz" | "maliyet" | "kayitlar";
 
-const initialState: AnalizState = {
-  meta: { numuneAd: "", musteri: "", tarih: new Date().toISOString().slice(0, 10) },
-  photos: [],
-  olcum: { gramajM2: "", tarakEn: "320", mamulEn: "300" },
-  cozgu: [yeniIplik({ tip: "DENYE", raw: "75", sik: "40", fiyat: "4" })],
-  atki: [yeniIplik({ tip: "DENYE", raw: "150", sik: "22", fiyat: "3" })],
-  cekme: { cozgu: { lDuz: "", lKumas: "" }, atki: { lDuz: "", lKumas: "" } },
-  params: {
-    devir: "280",
-    randiman: "85",
-    terbiyeFiyat: "1",
-    genelFire: "5",
-    kursum: "0.2",
-    ekMal: "0",
-  },
-};
+function createInitialState(): AnalizState {
+  return {
+    meta: { numuneAd: "", musteri: "", tarih: new Date().toISOString().slice(0, 10) },
+    photos: [],
+    olcum: { gramajM2: "", tarakEn: "320", mamulEn: "300" },
+    cozgu: [yeniIplik({ tip: "DENYE", raw: "75", sik: "40", fiyat: "4" })],
+    atki: [yeniIplik({ tip: "DENYE", raw: "150", sik: "22", fiyat: "3" })],
+    cekme: { cozgu: { lDuz: "", lKumas: "" }, atki: { lDuz: "", lKumas: "" } },
+    params: {
+      devir: "280",
+      randiman: "85",
+      terbiyeFiyat: "1",
+      genelFire: "5",
+      kursum: "0.2",
+      ekMal: "0",
+    },
+  };
+}
 
 const TABS: { k: Tab; l: string; short: string; I: LucideIcon }[] = [
   { k: "analiz", l: "1 · Analiz", short: "Analiz", I: Ruler },
   { k: "maliyet", l: "2 · Maliyet & Doğrulama", short: "Maliyet", I: Calculator },
+  { k: "kayitlar", l: "Kayıtlar", short: "Kayıtlar", I: FolderOpen },
 ];
 
 export default function App() {
   const isMobile = useIsMobile();
   const [tab, setTab] = useState<Tab>("analiz");
-  const [state, setState] = useState<AnalizState>(initialState);
+  const [state, setState] = useState<AnalizState>(createInitialState);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [records, setRecords] = useState<SavedRecord[]>(() => listRecords());
+  const [flash, setFlash] = useState<{ text: string; ok: boolean } | null>(null);
+  const flashTimer = useRef<number | undefined>(undefined);
 
   const set = (patch: Partial<AnalizState>) => setState((s) => ({ ...s, ...patch }));
   const r = useMemo(() => calcAll(state), [state]);
+
+  const showFlash = (text: string, ok = true) => {
+    setFlash({ text, ok });
+    window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(null), 2800);
+  };
+
+  const handleSave = () => {
+    const res = saveRecord(state, r.total, currentId);
+    if (res.ok && res.record) {
+      setCurrentId(res.record.id);
+      setRecords(listRecords());
+      showFlash(`Kaydedildi: ${res.record.ad}`);
+    } else {
+      showFlash("Kaydedilemedi — depolama dolu olabilir (fotoğraflar?)", false);
+    }
+  };
+
+  const handleNew = () => {
+    setState(createInitialState());
+    setCurrentId(null);
+    setTab("analiz");
+    showFlash("Yeni numune başlatıldı");
+  };
+
+  const handleLoad = (rec: SavedRecord) => {
+    setState(rec.state);
+    setCurrentId(rec.id);
+    setTab("analiz");
+    showFlash(`Yüklendi: ${rec.ad}`);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteRecord(id);
+    if (currentId === id) setCurrentId(null);
+    setRecords(listRecords());
+  };
+
+  const currentName = records.find((x) => x.id === currentId)?.ad;
+
+  const ghostBtn: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 14px",
+    background: "transparent",
+    border: `1px solid ${C.line}`,
+    color: C.text,
+    borderRadius: 9,
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: 13,
+  };
+  const primaryBtn: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 16px",
+    background: C.accent,
+    border: `1px solid ${C.accent}`,
+    color: "#fff",
+    borderRadius: 9,
+    cursor: "pointer",
+    fontWeight: 700,
+    fontSize: 13,
+  };
 
   return (
     <div
@@ -124,9 +208,11 @@ export default function App() {
                   color: tab === k ? "#fff" : C.dim,
                   fontWeight: 600,
                   fontSize: 13,
+                  whiteSpace: "nowrap",
                 }}
               >
                 <I size={15} /> {isMobile ? short : l}
+                {k === "kayitlar" && records.length > 0 ? ` (${records.length})` : ""}
               </button>
             ))}
           </div>
@@ -142,6 +228,42 @@ export default function App() {
           gap: isMobile ? 12 : 16,
         }}
       >
+        {tab !== "kayitlar" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span
+              style={{
+                fontSize: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                minWidth: 0,
+                color: flash ? (flash.ok ? C.ok : C.bad) : C.dim,
+              }}
+            >
+              {flash ? (
+                <>
+                  {flash.ok ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+                  {flash.text}
+                </>
+              ) : currentId ? (
+                <>
+                  Kayıt: <b style={{ color: C.text }}>{currentName}</b>
+                </>
+              ) : (
+                "Kaydedilmemiş numune"
+              )}
+            </span>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <button onClick={handleNew} style={ghostBtn}>
+                <FilePlus size={15} /> Yeni
+              </button>
+              <button onClick={handleSave} style={primaryBtn}>
+                <Save size={15} /> Kaydet
+              </button>
+            </div>
+          </div>
+        )}
+
         {tab === "analiz" && (
           <AnalizTab
             state={state}
@@ -151,6 +273,14 @@ export default function App() {
           />
         )}
         {tab === "maliyet" && <MaliyetTab state={state} set={set} r={r} />}
+        {tab === "kayitlar" && (
+          <KayitlarTab
+            records={records}
+            currentId={currentId}
+            onLoad={handleLoad}
+            onDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   );
