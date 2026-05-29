@@ -1,4 +1,14 @@
-import type { Iplik } from "./types";
+import type { Iplik, IplikInfo } from "./types";
+
+export const DEFAULT_INFO: IplikInfo = {
+  acik: false,
+  iplikAdi: "",
+  firmaAdi: "",
+  fason: false,
+  fasonFirma: "",
+  fasonIslem: "",
+  fasonFiyat: "",
+};
 
 export function yeniIplik(defaults: Partial<Iplik> = {}): Iplik {
   return {
@@ -8,6 +18,7 @@ export function yeniIplik(defaults: Partial<Iplik> = {}): Iplik {
     sik: "",
     fiyat: "",
     olcum: { uzunluk: "", adet: "1", agirlik: "", acik: false },
+    info: { ...DEFAULT_INFO },
     ...defaults,
   };
 }

@@ -10,8 +10,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { calcAll } from "./lib/calc";
-import { yeniIplik } from "./lib/factory";
-import type { AnalizState } from "./lib/types";
+import { yeniIplik, DEFAULT_INFO } from "./lib/factory";
+import type { AnalizState, Iplik } from "./lib/types";
 import { listRecords, saveRecord, deleteRecord, type SavedRecord } from "./lib/storage";
 import { C } from "./theme";
 import { useIsMobile } from "./lib/useIsMobile";
@@ -88,7 +88,14 @@ export default function App() {
   };
 
   const handleLoad = (rec: SavedRecord) => {
-    setState(rec.state);
+    // Eski kayitlarda info olmayabilir -> normalize et (yoksa row.info.acik coker)
+    const withInfo = (arr: Iplik[]) =>
+      arr.map((it) => ({ ...it, info: it.info ?? { ...DEFAULT_INFO } }));
+    setState({
+      ...rec.state,
+      cozgu: withInfo(rec.state.cozgu),
+      atki: withInfo(rec.state.atki),
+    });
     setCurrentId(rec.id);
     setTab("analiz");
     showFlash(`Yüklendi: ${rec.ad}`);

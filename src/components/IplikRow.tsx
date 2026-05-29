@@ -1,4 +1,4 @@
-import { Trash2, Scale, ChevronUp, ChevronDown } from "lucide-react";
+import { Trash2, Scale, ChevronUp, ChevronDown, Info } from "lucide-react";
 import { parseIplikRaw, num } from "../lib/calc";
 import { fmt } from "../lib/format";
 import { TIPLER, type IplikTip } from "../lib/fpd";
@@ -7,6 +7,7 @@ import { C } from "../theme";
 import { useIsMobile } from "../lib/useIsMobile";
 import { Field } from "./Field";
 import { OlcumPanel } from "./OlcumPanel";
+import { InfoPanel } from "./InfoPanel";
 
 interface IplikRowProps {
   row: Iplik;
@@ -79,6 +80,18 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
     />
   );
 
+  const infoDolu = !!(row.info.iplikAdi || row.info.firmaAdi || row.info.fason);
+  const toggleInfo = () =>
+    onChange({ ...row, info: { ...row.info, acik: !row.info.acik } });
+  const infoBtnBg = row.info.acik ? `${color}25` : infoDolu ? `${color}12` : "transparent";
+  const infoPanelEl = row.info.acik && (
+    <InfoPanel
+      info={row.info}
+      color={color}
+      onChange={(i) => onChange({ ...row, info: { ...i, acik: true } })}
+    />
+  );
+
   // ---- Mobil duzen: dikey gruplar ----
   if (isMobile) {
     return (
@@ -136,6 +149,24 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
                 {row.olcum.acik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
               <button
+                onClick={toggleInfo}
+                title="İplik bilgisi (ad / firma / fason)"
+                style={{
+                  width: 46,
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: infoBtnBg,
+                  border: `1px solid ${infoDolu ? color + "66" : C.line}`,
+                  borderRadius: 8,
+                  color: infoDolu ? color : C.dim,
+                  cursor: "pointer",
+                }}
+              >
+                <Info size={17} />
+              </button>
+              <button
                 onClick={onDelete}
                 title="Sil"
                 style={{
@@ -157,6 +188,7 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
           </div>
         </div>
         {olcumPanelEl}
+        {infoPanelEl}
       </div>
     );
   }
@@ -190,6 +222,29 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
           w={88}
           suffix="$/kg"
         />
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span aria-hidden style={{ fontSize: 11, visibility: "hidden", userSelect: "none" }}>
+            ·
+          </span>
+          <button
+            onClick={toggleInfo}
+            title="İplik bilgisi (ad / firma / fason)"
+            style={{
+              height: 38,
+              width: 38,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: infoBtnBg,
+              border: `1px solid ${infoDolu ? color + "66" : C.line}`,
+              borderRadius: 8,
+              color: infoDolu ? color : C.dim,
+              cursor: "pointer",
+            }}
+          >
+            <Info size={16} />
+          </button>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span aria-hidden style={{ fontSize: 11, visibility: "hidden", userSelect: "none" }}>
             ·
@@ -241,6 +296,7 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
         </div>
       </div>
       {olcumPanelEl}
+      {infoPanelEl}
     </div>
   );
 }

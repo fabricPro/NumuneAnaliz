@@ -7,6 +7,19 @@ export interface OlcumState {
   acik: boolean;
 }
 
+/** Iplik bilgi alanlari — SADECE bilgi, maliyete (calcAll) girmez */
+export interface IplikInfo {
+  /** Info paneli acik mi */
+  acik: boolean;
+  iplikAdi: string;
+  firmaAdi: string;
+  /** "Fason islem" checkbox */
+  fason: boolean;
+  fasonFirma: string;
+  fasonIslem: string;
+  fasonFiyat: string;
+}
+
 export interface Iplik {
   id: number;
   tip: IplikTip;
@@ -17,6 +30,8 @@ export interface Iplik {
   /** Birim fiyat ($/kg) */
   fiyat: string;
   olcum: OlcumState;
+  /** Sadece bilgi — maliyeti etkilemez */
+  info: IplikInfo;
 }
 
 export interface TemelOlcu {
