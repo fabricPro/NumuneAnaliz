@@ -110,9 +110,9 @@ export function setDimension(
 }
 
 export function defaultDesen(): DesenState {
-  const warpCount = 8;
-  const weftCount = 8;
-  const frameCount = 4;
+  const warpCount = 6;
+  const weftCount = 6;
+  const frameCount = 6;
   const iroCount = 1;
   return {
     warpCount,
