@@ -19,6 +19,7 @@ export function yeniIplik(defaults: Partial<Iplik> = {}): Iplik {
     fiyat: "",
     olcum: { uzunluk: "", adet: "1", agirlik: "", acik: false },
     info: { ...DEFAULT_INFO },
+    contents: [],
     ...defaults,
   };
 }

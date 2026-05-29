@@ -93,8 +93,10 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
   const infoPanelEl = row.info.acik && (
     <InfoPanel
       info={row.info}
+      contents={row.contents}
       color={color}
       onChange={(i) => onChange({ ...row, info: { ...i, acik: true } })}
+      onContentsChange={(contents) => onChange({ ...row, contents })}
     />
   );
 

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import {
   Calculator,
@@ -6,9 +7,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { num } from "../lib/calc";
+import { calcKumasIcerik, num } from "../lib/calc";
 import { fmt } from "../lib/format";
 import type { AnalizState, CalcResult } from "../lib/types";
 import { C } from "../theme";
@@ -24,6 +26,7 @@ interface MaliyetTabProps {
 
 export function MaliyetTab({ state, set, r }: MaliyetTabProps) {
   const isMobile = useIsMobile();
+  const icerik = useMemo(() => calcKumasIcerik(state, r), [state, r]);
   const sapmaAbs = r.sapma == null ? null : Math.abs(r.sapma);
   const durum: { c: string; t: string; Icon: LucideIcon } =
     sapmaAbs == null
@@ -113,6 +116,56 @@ export function MaliyetTab({ state, set, r }: MaliyetTabProps) {
             {fmt(r.atkiFak, 3)} (%{fmt(r.aCek * 100)})
           </span>
         </div>
+      </Card>
+
+      <Card title="Kumaş İçeriği" icon={<Sparkles size={16} color={C.weft} />} accent={C.weft}>
+        {icerik.length === 0 ? (
+          <span style={{ fontSize: 12, color: C.dim }}>
+            İpliklere içerik (elyaf cinsi/oran) eklenmedi — info panelinden ekleyin.
+          </span>
+        ) : (
+          <>
+            <div
+              style={{
+                fontSize: isMobile ? 18 : 22,
+                fontWeight: 800,
+                fontFamily: "ui-monospace, monospace",
+                color: C.text,
+                marginBottom: 10,
+                lineHeight: 1.3,
+                wordBreak: "break-word",
+              }}
+            >
+              {icerik
+                .map((i) => `%${fmt(i.oran, i.oran >= 10 ? 0 : 1)} ${i.elyaf}`)
+                .join(" · ")}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {icerik.map((i) => (
+                <div
+                  key={i.elyaf}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    fontSize: 12,
+                    color: C.dim,
+                  }}
+                >
+                  <span style={{ width: 50, fontFamily: "ui-monospace, monospace", color: C.text, fontWeight: 700 }}>
+                    {i.elyaf}
+                  </span>
+                  <span style={{ flex: 1, fontFamily: "ui-monospace, monospace" }}>
+                    %{fmt(i.oran, 2)}
+                  </span>
+                  <span style={{ fontFamily: "ui-monospace, monospace" }}>
+                    {fmt(i.gramaj, 1)} g/mt
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </Card>
 
       <div

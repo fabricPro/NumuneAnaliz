@@ -125,13 +125,17 @@ export default function App() {
   };
 
   const handleLoad = (rec: SavedRecord) => {
-    // Eski kayitlarda info olmayabilir -> normalize et (yoksa row.info.acik coker)
-    const withInfo = (arr: Iplik[]) =>
-      arr.map((it) => ({ ...it, info: it.info ?? { ...DEFAULT_INFO } }));
+    // Eski kayitlarda info / contents / desen olmayabilir -> normalize et
+    const normalize = (arr: Iplik[]) =>
+      arr.map((it) => ({
+        ...it,
+        info: it.info ?? { ...DEFAULT_INFO },
+        contents: it.contents ?? [],
+      }));
     setState({
       ...rec.state,
-      cozgu: withInfo(rec.state.cozgu),
-      atki: withInfo(rec.state.atki),
+      cozgu: normalize(rec.state.cozgu),
+      atki: normalize(rec.state.atki),
       desen: rec.state.desen ?? defaultDesen(),
     });
     setCurrentId(rec.id);

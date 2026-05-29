@@ -1,7 +1,7 @@
 import "./font";
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import type { AnalizState, CalcResult, Iplik } from "../lib/types";
-import { num, parseIplikRaw, tukH, atkiGramaj, cekmeOran } from "../lib/calc";
+import { calcKumasIcerik, num, parseIplikRaw, tukH, atkiGramaj, cekmeOran } from "../lib/calc";
 import { nf } from "../lib/format";
 import { computeDesen, IRO_COLORS } from "../lib/desen";
 
@@ -308,6 +308,7 @@ function LabeledMatrixGrid({
 export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult }) {
   const tarakEn = num(state.olcum.tarakEn);
   const kursumEk = num(state.params.kursum) + num(state.params.ekMal);
+  const icerik = calcKumasIcerik(state, r);
 
   const dd = state.desen;
   const desenDolu = dd.armur.some((row) => row.some(Boolean));
@@ -371,6 +372,32 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
             <Text style={[s.durumPill, { backgroundColor: durum.c }]}>{durum.t}</Text>
           </View>
         </View>
+
+        {icerik.length > 0 && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              backgroundColor: P.headerBg,
+              borderLeftWidth: 3,
+              borderLeftColor: P.weft,
+              borderRadius: 4,
+              marginBottom: 12,
+            }}
+          >
+            <Text style={{ fontSize: 8, fontWeight: 700, color: P.muted, textTransform: "uppercase", letterSpacing: 0.4 }}>
+              Kumaş İçeriği
+            </Text>
+            <Text style={{ fontSize: 12, fontWeight: 700, color: P.text }}>
+              {icerik
+                .map((i) => `%${nf(i.oran, i.oran >= 10 ? 0 : 1)} ${i.elyaf}`)
+                .join(" · ")}
+            </Text>
+          </View>
+        )}
 
         <View style={s.section}>
           <Text style={s.secTitle}>Kompozisyon</Text>

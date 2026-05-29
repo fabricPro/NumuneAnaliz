@@ -1,5 +1,5 @@
 import { FPD, type IplikTip } from "./fpd";
-import type { AnalizState, CalcResult, OlcumSonuc } from "./types";
+import type { AnalizState, CalcResult, KumasIcerik, OlcumSonuc } from "./types";
 
 export const num = (v: unknown): number => {
   if (typeof v === "number") return v;
@@ -169,4 +169,44 @@ export function calcAll(state: AnalizState): CalcResult {
     olcumM2,
     sapma,
   };
+}
+
+/**
+ * Kumas icerik hesabi — her ipligin gramaj katkisi × elyaf orani -> elyafa gore topla, %'ye normalize.
+ * Iplik basina oran toplami 100 olmasa da literal kullanilir; final % normalize toplam uzerinden.
+ */
+export function calcKumasIcerik(state: AnalizState, r: CalcResult): KumasIcerik[] {
+  const tarakEn = num(state.olcum.tarakEn);
+  const map = new Map<string, number>();
+
+  const addContents = (g: number, contents: { elyaf: string; oran: string }[]) => {
+    if (g <= 0 || !contents || contents.length === 0) return;
+    for (const c of contents) {
+      const elyaf = c.elyaf.trim().toUpperCase();
+      const oran = num(c.oran) / 100;
+      if (!elyaf || oran <= 0) continue;
+      const w = g * oran;
+      map.set(elyaf, (map.get(elyaf) ?? 0) + w);
+    }
+  };
+
+  for (const c of state.cozgu) {
+    const { denye, kat } = parseIplikRaw(c.raw);
+    const tel = num(c.sik) * tarakEn;
+    const g = tukH(c.tip, denye, kat, tel, r.cozguFak);
+    addContents(g, c.contents);
+  }
+  for (const a of state.atki) {
+    const { denye, kat } = parseIplikRaw(a.raw);
+    const tel = num(a.sik) * 100;
+    const g = atkiGramaj(a.tip, denye, kat, tel, tarakEn, r.atkiFak);
+    addContents(g, a.contents);
+  }
+
+  const total = [...map.values()].reduce((a, b) => a + b, 0);
+  if (total <= 0) return [];
+
+  return [...map.entries()]
+    .map(([elyaf, gramaj]) => ({ elyaf, gramaj, oran: (gramaj / total) * 100 }))
+    .sort((a, b) => b.oran - a.oran);
 }

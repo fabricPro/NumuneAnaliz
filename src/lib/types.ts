@@ -7,6 +7,14 @@ export interface OlcumState {
   acik: boolean;
 }
 
+/** Iplik elyaf icerigi (icerik ekleme). Iplik basina max 6 satir. */
+export interface IplikContent {
+  /** PES, LI, CO, WO, PA, AC, VI, EL, SE… (kullanici serbestce yazar, render'da uppercase) */
+  elyaf: string;
+  /** Yuzde (%) — string olarak tutulur (Field uyumlu) */
+  oran: string;
+}
+
 /** Iplik bilgi alanlari — SADECE bilgi, maliyete (calcAll) girmez */
 export interface IplikInfo {
   /** Info paneli acik mi */
@@ -32,6 +40,8 @@ export interface Iplik {
   olcum: OlcumState;
   /** Sadece bilgi — maliyeti etkilemez */
   info: IplikInfo;
+  /** Elyaf icerigi (max 6). Kumas icerik hesabina girer — ana maliyeti degistirmez. */
+  contents: IplikContent[];
 }
 
 export interface TemelOlcu {
@@ -107,6 +117,16 @@ export interface OlcumSonuc {
   nm: number;
   ne: number;
   ok: boolean;
+}
+
+/** Kumas icerik dagilimi — calcKumasIcerik() ciktisi */
+export interface KumasIcerik {
+  /** Normalize edilmis elyaf kodu (uppercase, ornek "PES") */
+  elyaf: string;
+  /** O elyaftan toplam (g/mt) */
+  gramaj: number;
+  /** Toplam icerik icindeki yuzde (0-100) */
+  oran: number;
 }
 
 /** calcAll() ciktisi */
