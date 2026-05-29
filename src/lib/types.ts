@@ -72,6 +72,23 @@ export interface Photo {
   label: string;
 }
 
+/** Dokuma deseni — tahar / armür / desen(hesaplanır) / atkı raporu(iro) */
+export interface DesenState {
+  warpCount: number;
+  weftCount: number;
+  frameCount: number;
+  iroCount: number;
+  /** Rapor tekrar (döşeme önizlemesi) */
+  raporX: number;
+  raporY: number;
+  /** tahar[warpIdx] = frameIdx (0-based) */
+  tahar: number[];
+  /** armur[frameIdx][weftIdx] = o atkıda çerçeve kalkıyor mu */
+  armur: boolean[][];
+  /** iroData[weftIdx] = atkı motoru/rengi (1-based) */
+  iroData: number[];
+}
+
 export interface AnalizState {
   meta: Meta;
   photos: Photo[];
@@ -80,6 +97,7 @@ export interface AnalizState {
   atki: Iplik[];
   cekme: CekmeState;
   params: Params;
+  desen: DesenState;
 }
 
 /** olcumKalinlik() ciktisi — sok/olc/tart ile iplik no tayini */

@@ -6,12 +6,14 @@ import {
   Save,
   FilePlus,
   FileText,
+  Grid3x3,
   CheckCircle2,
   AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { calcAll } from "./lib/calc";
 import { yeniIplik, DEFAULT_INFO } from "./lib/factory";
+import { defaultDesen } from "./lib/desen";
 import type { AnalizState, Iplik } from "./lib/types";
 import { listRecords, saveRecord, deleteRecord, type SavedRecord } from "./lib/storage";
 import { C } from "./theme";
@@ -19,8 +21,9 @@ import { useIsMobile } from "./lib/useIsMobile";
 import { AnalizTab } from "./components/AnalizTab";
 import { MaliyetTab } from "./components/MaliyetTab";
 import { KayitlarTab } from "./components/KayitlarTab";
+import { DesenTab } from "./components/DesenTab";
 
-type Tab = "analiz" | "maliyet" | "kayitlar";
+type Tab = "analiz" | "maliyet" | "desen" | "kayitlar";
 
 function createInitialState(): AnalizState {
   return {
@@ -38,12 +41,14 @@ function createInitialState(): AnalizState {
       kursum: "0.2",
       ekMal: "0",
     },
+    desen: defaultDesen(),
   };
 }
 
 const TABS: { k: Tab; l: string; short: string; I: LucideIcon }[] = [
   { k: "analiz", l: "1 · Analiz", short: "Analiz", I: Ruler },
-  { k: "maliyet", l: "2 · Maliyet & Doğrulama", short: "Maliyet", I: Calculator },
+  { k: "maliyet", l: "2 · Maliyet", short: "Maliyet", I: Calculator },
+  { k: "desen", l: "3 · Desen", short: "Desen", I: Grid3x3 },
   { k: "kayitlar", l: "Kayıtlar", short: "Kayıtlar", I: FolderOpen },
 ];
 
@@ -127,6 +132,7 @@ export default function App() {
       ...rec.state,
       cozgu: withInfo(rec.state.cozgu),
       atki: withInfo(rec.state.atki),
+      desen: rec.state.desen ?? defaultDesen(),
     });
     setCurrentId(rec.id);
     setTab("analiz");
@@ -320,6 +326,9 @@ export default function App() {
           />
         )}
         {tab === "maliyet" && <MaliyetTab state={state} set={set} r={r} />}
+        {tab === "desen" && (
+          <DesenTab desen={state.desen} onChange={(dd) => set({ desen: dd })} />
+        )}
         {tab === "kayitlar" && (
           <KayitlarTab
             records={records}

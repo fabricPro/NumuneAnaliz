@@ -3,6 +3,7 @@ import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/render
 import type { AnalizState, CalcResult, Iplik } from "../lib/types";
 import { num, parseIplikRaw, tukH, atkiGramaj, cekmeOran } from "../lib/calc";
 import { nf } from "../lib/format";
+import { computeDesen, IRO_COLORS } from "../lib/desen";
 
 const P = {
   text: "#0f172a",
@@ -69,6 +70,7 @@ const s = StyleSheet.create({
     paddingBottom: 3,
     marginBottom: 6,
   },
+  gridTitle: { fontSize: 9, fontWeight: 700, color: P.text, marginTop: 8, marginBottom: 4 },
 
   table: { borderWidth: 1, borderColor: P.line, borderRadius: 4, marginBottom: 4 },
   tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: P.line },
@@ -195,9 +197,53 @@ function Stat({ label, value, unit, color }: { label: string; value: string; uni
   );
 }
 
+function fitSize(cols: number, maxPt = 8): number {
+  return Math.max(2, Math.min(maxPt, Math.floor(520 / Math.max(1, cols))));
+}
+
+function MatrixGrid({
+  rows,
+  cols,
+  isOn,
+  fill,
+  size,
+}: {
+  rows: number;
+  cols: number;
+  isOn: (r: number, c: number) => boolean;
+  fill: (r: number, c: number) => string;
+  size: number;
+}) {
+  return (
+    <View style={{ flexDirection: "column", borderTopWidth: 0.5, borderLeftWidth: 0.5, borderColor: "#999" }}>
+      {Array.from({ length: rows }).map((_, rr) => (
+        <View key={rr} style={{ flexDirection: "row" }}>
+          {Array.from({ length: cols }).map((__, cc) => (
+            <View
+              key={cc}
+              style={{
+                width: size,
+                height: size,
+                borderRightWidth: 0.5,
+                borderBottomWidth: 0.5,
+                borderColor: "#999",
+                backgroundColor: isOn(rr, cc) ? fill(rr, cc) : "#ffffff",
+              }}
+            />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult }) {
   const tarakEn = num(state.olcum.tarakEn);
   const kursumEk = num(state.params.kursum) + num(state.params.ekMal);
+
+  const dd = state.desen;
+  const desenDolu = dd.armur.some((row) => row.some(Boolean));
+  const desenMat = computeDesen(dd.tahar, dd.armur, dd.weftCount);
 
   const sapmaAbs = r.sapma == null ? null : Math.abs(r.sapma);
   const durum =
@@ -352,6 +398,61 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
         </View>
       </Page>
+
+      {desenDolu && (
+        <Page size="A4" style={s.page}>
+          <Text style={s.secTitle}>Desen — Tahar · Armür · Desen · Atkı Raporu</Text>
+          <Text style={s.note}>
+            Çözgü {dd.warpCount} · Atkı {dd.weftCount} · Çerçeve {dd.frameCount} · İro {dd.iroCount}
+            {dd.raporX > 1 || dd.raporY > 1 ? ` · Rapor ${dd.raporX}×${dd.raporY}` : ""}
+          </Text>
+
+          <Text style={s.gridTitle}>Tahar (çözgü → çerçeve)</Text>
+          <MatrixGrid
+            rows={dd.frameCount}
+            cols={dd.warpCount}
+            size={fitSize(dd.warpCount)}
+            isOn={(rr, cc) => dd.tahar[cc] === dd.frameCount - 1 - rr}
+            fill={() => P.accent}
+          />
+
+          <Text style={s.gridTitle}>Armür (çerçeve × atkı)</Text>
+          <MatrixGrid
+            rows={dd.weftCount}
+            cols={dd.frameCount}
+            size={fitSize(dd.frameCount)}
+            isOn={(rr, cc) => Boolean(dd.armur[cc]?.[dd.weftCount - 1 - rr])}
+            fill={() => P.accent}
+          />
+
+          <Text style={s.gridTitle}>Desen (otomatik)</Text>
+          <MatrixGrid
+            rows={dd.weftCount * dd.raporY}
+            cols={dd.warpCount * dd.raporX}
+            size={fitSize(dd.warpCount * dd.raporX, 6)}
+            isOn={(rr, cc) =>
+              Boolean(
+                desenMat[cc % dd.warpCount]?.[(dd.weftCount * dd.raporY - 1 - rr) % dd.weftCount],
+              )
+            }
+            fill={() => "#111111"}
+          />
+
+          <Text style={s.gridTitle}>Atkı Raporu (iro / renk)</Text>
+          <MatrixGrid
+            rows={dd.weftCount}
+            cols={dd.iroCount}
+            size={fitSize(dd.iroCount)}
+            isOn={(rr, cc) => dd.iroData[dd.weftCount - 1 - rr] === cc + 1}
+            fill={(_rr, cc) => IRO_COLORS[cc % IRO_COLORS.length]}
+          />
+
+          <View style={s.footer} fixed>
+            <Text>TexAI · Numune Analiz & Maliyet</Text>
+            <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+          </View>
+        </Page>
+      )}
     </Document>
   );
 }
