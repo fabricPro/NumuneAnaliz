@@ -256,16 +256,25 @@ export function DesenTab({ desen: d, onChange }: DesenTabProps) {
         <TaharGrid desen={d} onChange={onChange} />
       </Card>
 
-      <Card title="Armür — kaldırma planı (çerçeve × atkı)" icon={<Grid3x3 size={16} color={C.accent} />} accent={C.accent}>
-        <ArmurGrid desen={d} onChange={onChange} />
+      <Card title="Armür + Atkı Raporu" icon={<Grid3x3 size={16} color={C.accent} />} accent={C.accent}>
+        <div style={{ display: "flex", flexDirection: "row", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Armür — çerçeve × atkı
+            </div>
+            <ArmurGrid desen={d} onChange={onChange} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.weft, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Atkı Raporu — iro / renk
+            </div>
+            <AtkiRaporGrid desen={d} onChange={onChange} />
+          </div>
+        </div>
       </Card>
 
       <Card title="Desen — otomatik (tahar + armür)" icon={<Grid3x3 size={16} color={C.text} />}>
         <DesenPreview d={d} />
-      </Card>
-
-      <Card title="Atkı Raporu — iro / renk sırası" icon={<Grid3x3 size={16} color={C.weft} />} accent={C.weft}>
-        <AtkiRaporGrid desen={d} onChange={onChange} />
       </Card>
     </>
   );
