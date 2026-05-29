@@ -4,6 +4,7 @@ import { fmt } from "../lib/format";
 import type { OlcumState } from "../lib/types";
 import type { IplikTip } from "../lib/fpd";
 import { C } from "../theme";
+import { useIsMobile } from "../lib/useIsMobile";
 import { Field } from "./Field";
 
 interface OlcumPanelProps {
@@ -14,6 +15,7 @@ interface OlcumPanelProps {
 }
 
 export function OlcumPanel({ olcum, onChange, onApply, color }: OlcumPanelProps) {
+  const isMobile = useIsMobile();
   const res = olcumKalinlik(olcum.uzunluk, olcum.adet, olcum.agirlik);
   const sistemler: { key: IplikTip; val: number; fmt: number; hint: string }[] = [
     { key: "DENYE", val: res.denye, fmt: 1, hint: "g/9000m" },
@@ -45,7 +47,13 @@ export function OlcumPanel({ olcum, onChange, onApply, color }: OlcumPanelProps)
           İplik ölçümü — sök, ölç, tart
         </span>
       </div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <div
+        style={
+          isMobile
+            ? { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }
+            : { display: "flex", gap: 8, marginBottom: 12 }
+        }
+      >
         <Field
           label="Uzunluk"
           value={olcum.uzunluk}
@@ -69,7 +77,13 @@ export function OlcumPanel({ olcum, onChange, onApply, color }: OlcumPanelProps)
       <div style={{ fontSize: 10, color: C.dim, marginBottom: 8 }}>
         Hesaplanan kalınlık (uygulamak için tıkla):
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+          gap: 8,
+        }}
+      >
         {sistemler.map((s) => {
           const active = res.ok;
           return (

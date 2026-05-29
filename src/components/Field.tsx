@@ -1,4 +1,5 @@
 import { C } from "../theme";
+import { useIsMobile } from "../lib/useIsMobile";
 
 interface FieldProps {
   label: string;
@@ -19,14 +20,14 @@ export function Field({
   type = "text",
   placeholder,
 }: FieldProps) {
+  const isMobile = useIsMobile();
   return (
     <label
       style={{
         display: "flex",
         flexDirection: "column",
         gap: 4,
-        width: w || "auto",
-        flex: w ? "none" : 1,
+        ...(isMobile ? { width: "100%" } : { width: w || "auto", flex: w ? "none" : 1 }),
       }}
     >
       <span style={{ fontSize: 11, color: C.dim, letterSpacing: 0.3 }}>{label}</span>

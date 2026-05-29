@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { AnalizState } from "../lib/types";
 import { yeniIplik } from "../lib/factory";
+import { useIsMobile } from "../lib/useIsMobile";
 import { C, btnAdd } from "../theme";
 import { Card } from "./Card";
 import { Field } from "./Field";
@@ -27,6 +28,7 @@ interface AnalizTabProps {
 }
 
 export function AnalizTab({ state, set, setState, onNext }: AnalizTabProps) {
+  const isMobile = useIsMobile();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const addPhotos = (files: FileList | null) => {
@@ -239,7 +241,7 @@ export function AnalizTab({ state, set, setState, onNext }: AnalizTabProps) {
       </Card>
 
       <Card title="Çekme Ölçümleri" icon={<Activity size={16} color={C.accent} />}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
           <CekmeBlok
             label="Çözgü çekmesi"
             color={C.warp}

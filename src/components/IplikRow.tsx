@@ -4,6 +4,7 @@ import { fmt } from "../lib/format";
 import { TIPLER, type IplikTip } from "../lib/fpd";
 import type { Iplik } from "../lib/types";
 import { C } from "../theme";
+import { useIsMobile } from "../lib/useIsMobile";
 import { Field } from "./Field";
 import { OlcumPanel } from "./OlcumPanel";
 
@@ -16,6 +17,7 @@ interface IplikRowProps {
 }
 
 export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowProps) {
+  const isMobile = useIsMobile();
   const { denye, kat } = parseIplikRaw(row.raw);
   const olcumDolu = num(row.olcum.agirlik) > 0 && num(row.olcum.uzunluk) > 0;
 
@@ -29,38 +31,142 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
     onChange({ ...row, tip: sistem, raw: newRaw });
   };
 
+  const tipSelect = (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4, width: 88 }}>
+      <span style={{ fontSize: 11, color: C.dim }}>Tip</span>
+      <select
+        value={row.tip}
+        onChange={(e) => onChange({ ...row, tip: e.target.value as IplikTip })}
+        style={{
+          background: C.bg,
+          border: `1px solid ${C.line}`,
+          borderRadius: 8,
+          color: C.text,
+          padding: "9px 6px",
+          fontSize: 13,
+        }}
+      >
+        {TIPLER.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  const iplikNo = (
+    <span style={{ display: "block", marginTop: 4, fontSize: 10, color: C.dim }}>
+      → no {fmt(denye, 0)} · {kat} kat
+    </span>
+  );
+
+  const toggleOlcum = () =>
+    onChange({ ...row, olcum: { ...row.olcum, acik: !row.olcum.acik } });
+
+  const olcumBtnBg = row.olcum.acik
+    ? `${color}25`
+    : olcumDolu
+      ? `${color}12`
+      : "transparent";
+
+  const olcumPanelEl = row.olcum.acik && (
+    <OlcumPanel
+      olcum={row.olcum}
+      color={color}
+      onChange={(o) => onChange({ ...row, olcum: { ...o, acik: true } })}
+      onApply={applyOlcum}
+    />
+  );
+
+  // ---- Mobil duzen: dikey gruplar ----
+  if (isMobile) {
+    return (
+      <div style={{ padding: "12px 0", borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ width: 4, alignSelf: "stretch", background: color, borderRadius: 2 }} />
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              {tipSelect}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Field
+                  label="İplik (örn 300*2)"
+                  value={row.raw}
+                  onChange={(v) => onChange({ ...row, raw: v })}
+                  placeholder="kalınlık*kat"
+                />
+                {iplikNo}
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <Field
+                label={sikLabel}
+                value={row.sik}
+                onChange={(v) => onChange({ ...row, sik: v })}
+                suffix="ad/cm"
+              />
+              <Field
+                label="Fiyat"
+                value={row.fiyat}
+                onChange={(v) => onChange({ ...row, fiyat: v })}
+                suffix="$/kg"
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={toggleOlcum}
+                title="İplik ölçüm hesaplayıcı"
+                style={{
+                  flex: 1,
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  background: olcumBtnBg,
+                  border: `1px solid ${olcumDolu ? color + "66" : C.line}`,
+                  borderRadius: 8,
+                  color: olcumDolu ? color : C.dim,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                <Scale size={15} /> İplik ölç
+                {row.olcum.acik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              <button
+                onClick={onDelete}
+                title="Sil"
+                style={{
+                  width: 46,
+                  height: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "transparent",
+                  border: `1px solid ${C.line}`,
+                  borderRadius: 8,
+                  color: C.bad,
+                  cursor: "pointer",
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+        {olcumPanelEl}
+      </div>
+    );
+  }
+
+  // ---- Desktop duzen: tek yatay satir ----
   return (
     <div style={{ padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-        <div
-          style={{
-            width: 4,
-            alignSelf: "stretch",
-            background: color,
-            borderRadius: 2,
-          }}
-        />
-        <label style={{ display: "flex", flexDirection: "column", gap: 4, width: 88 }}>
-          <span style={{ fontSize: 11, color: C.dim }}>Tip</span>
-          <select
-            value={row.tip}
-            onChange={(e) => onChange({ ...row, tip: e.target.value as IplikTip })}
-            style={{
-              background: C.bg,
-              border: `1px solid ${C.line}`,
-              borderRadius: 8,
-              color: C.text,
-              padding: "9px 6px",
-              fontSize: 13,
-            }}
-          >
-            {TIPLER.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div style={{ width: 4, alignSelf: "stretch", background: color, borderRadius: 2 }} />
+        {tipSelect}
         <div style={{ flex: 1.2 }}>
           <Field
             label="İplik (örn 300*2)"
@@ -68,9 +174,7 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
             onChange={(v) => onChange({ ...row, raw: v })}
             placeholder="kalınlık*kat"
           />
-          <span style={{ display: "block", marginTop: 4, fontSize: 10, color: C.dim }}>
-            → no {fmt(denye, 0)} · {kat} kat
-          </span>
+          {iplikNo}
         </div>
         <Field
           label={sikLabel}
@@ -91,15 +195,11 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
             ·
           </span>
           <button
-            onClick={() => onChange({ ...row, olcum: { ...row.olcum, acik: !row.olcum.acik } })}
+            onClick={toggleOlcum}
             title="İplik ölçüm hesaplayıcı"
             style={{
               height: 38,
-              background: row.olcum.acik
-                ? `${color}25`
-                : olcumDolu
-                  ? `${color}12`
-                  : "transparent",
+              background: olcumBtnBg,
               border: `1px solid ${olcumDolu ? color + "66" : C.line}`,
               borderRadius: 8,
               color: olcumDolu ? color : C.dim,
@@ -140,14 +240,7 @@ export function IplikRow({ row, onChange, onDelete, sikLabel, color }: IplikRowP
           </button>
         </div>
       </div>
-      {row.olcum.acik && (
-        <OlcumPanel
-          olcum={row.olcum}
-          color={color}
-          onChange={(o) => onChange({ ...row, olcum: { ...o, acik: true } })}
-          onApply={applyOlcum}
-        />
-      )}
+      {olcumPanelEl}
     </div>
   );
 }

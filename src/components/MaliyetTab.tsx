@@ -12,6 +12,7 @@ import { num } from "../lib/calc";
 import { fmt } from "../lib/format";
 import type { AnalizState, CalcResult } from "../lib/types";
 import { C } from "../theme";
+import { useIsMobile } from "../lib/useIsMobile";
 import { Card } from "./Card";
 import { Field } from "./Field";
 
@@ -22,6 +23,7 @@ interface MaliyetTabProps {
 }
 
 export function MaliyetTab({ state, set, r }: MaliyetTabProps) {
+  const isMobile = useIsMobile();
   const sapmaAbs = r.sapma == null ? null : Math.abs(r.sapma);
   const durum: { c: string; t: string; Icon: LucideIcon } =
     sapmaAbs == null
@@ -93,7 +95,8 @@ export function MaliyetTab({ state, set, r }: MaliyetTabProps) {
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "flex-start" : "center",
             gap: 8,
             padding: "10px 12px",
             background: C.bg,
@@ -101,16 +104,24 @@ export function MaliyetTab({ state, set, r }: MaliyetTabProps) {
             borderRadius: 10,
           }}
         >
-          <durum.Icon size={18} color={durum.c} />
-          <span style={{ color: durum.c, fontWeight: 600, fontSize: 14 }}>{durum.t}</span>
-          <span style={{ marginLeft: "auto", fontSize: 11, color: C.dim }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <durum.Icon size={18} color={durum.c} />
+            <span style={{ color: durum.c, fontWeight: 600, fontSize: 14 }}>{durum.t}</span>
+          </div>
+          <span style={{ marginLeft: isMobile ? 0 : "auto", fontSize: 11, color: C.dim }}>
             Çekme faktörü → çözgü ×{fmt(r.cozguFak, 3)} (%{fmt(r.cCek * 100)}) · atkı ×
             {fmt(r.atkiFak, 3)} (%{fmt(r.aCek * 100)})
           </span>
         </div>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 16 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1.3fr 1fr",
+          gap: 16,
+        }}
+      >
         <Card title="Maliyet Dökümü" icon={<Calculator size={16} color={C.accent} />}>
           {breakdown.map(([l, v, col]) => (
             <div
@@ -238,7 +249,13 @@ export function MaliyetTab({ state, set, r }: MaliyetTabProps) {
         title="Üretim & Finisaj Parametreleri"
         icon={<FlaskConical size={16} color={C.accent} />}
       >
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div
+          style={
+            isMobile
+              ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }
+              : { display: "flex", gap: 12, flexWrap: "wrap" }
+          }
+        >
           <Field
             label="Tezgah devri"
             value={state.params.devir}
