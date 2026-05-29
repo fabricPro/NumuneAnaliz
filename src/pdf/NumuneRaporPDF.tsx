@@ -476,12 +476,14 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           </Text>
 
           <Text style={s.gridTitle}>Tahar (çözgü → çerçeve)</Text>
-          <MatrixGrid
+          <LabeledMatrixGrid
             rows={dd.frameCount}
             cols={dd.warpCount}
             size={fitSize(dd.warpCount)}
             isOn={(rr, cc) => dd.tahar[cc] === dd.frameCount - 1 - rr}
             fill={() => P.accent}
+            leftLabels={Array.from({ length: dd.frameCount }, (_, i) => "F" + (dd.frameCount - i))}
+            bottomLabels={Array.from({ length: dd.warpCount }, (_, i) => i + 1)}
           />
 
           <View style={{ flexDirection: "row", gap: 18, marginTop: 6 }}>
