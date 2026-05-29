@@ -238,9 +238,9 @@ function MatrixGrid({
   );
 }
 
-const AXIS_W = 12;
-const AXIS_FS = 6;
-const AXIS_COLOR = "#666";
+const AXIS_W = 16;
+const AXIS_FS = 7;
+const AXIS_COLOR = "#222";
 
 function LabeledMatrixGrid({
   rows,
@@ -276,7 +276,7 @@ function LabeledMatrixGrid({
                   justifyContent: "center",
                 }}
               >
-                <Text style={{ fontSize: AXIS_FS, color: AXIS_COLOR }}>{String(label)}</Text>
+                <Text style={{ fontSize: AXIS_FS, fontFamily: "Geist", fontWeight: 700, color: AXIS_COLOR, lineHeight: 1 }}>{String(label)}</Text>
               </View>
             ))}
           </View>
@@ -296,7 +296,7 @@ function LabeledMatrixGrid({
                 justifyContent: "flex-start",
               }}
             >
-              <Text style={{ fontSize: AXIS_FS, color: AXIS_COLOR }}>{String(label)}</Text>
+              <Text style={{ fontSize: AXIS_FS, fontFamily: "Geist", fontWeight: 700, color: AXIS_COLOR, lineHeight: 1 }}>{String(label)}</Text>
             </View>
           ))}
         </View>
