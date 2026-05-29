@@ -280,8 +280,8 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View>
-            <Text style={s.brand}>TexAI</Text>
-            <Text style={s.brandSub}>Numune Analiz & Maliyet Raporu</Text>
+            <Text style={s.brand}>Numune Analiz & Maliyet</Text>
+            <Text style={s.brandSub}>Rapor</Text>
           </View>
           <View style={s.metaRight}>
             <Text style={s.metaName}>{state.meta.numuneAd || "—"}</Text>
@@ -394,7 +394,7 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
         )}
 
         <View style={s.footer} fixed>
-          <Text>TexAI · Numune Analiz & Maliyet</Text>
+          <Text>Numune Analiz & Maliyet</Text>
           <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
         </View>
       </Page>
@@ -448,7 +448,7 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           />
 
           <View style={s.footer} fixed>
-            <Text>TexAI · Numune Analiz & Maliyet</Text>
+            <Text>Numune Analiz & Maliyet</Text>
             <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
           </View>
         </Page>
