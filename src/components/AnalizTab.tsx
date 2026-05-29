@@ -148,7 +148,7 @@ export function AnalizTab({ state, set, setState, onNext }: AnalizTabProps) {
                 gap: 6,
               }}
             >
-              <ImageOff size={14} /> Henüz fotoğraf yok (taslakta bellekte tutulur, DB sonra)
+              <ImageOff size={14} /> Henüz fotoğraf yok (tam çözünürlükte, cihazda saklanır)
             </span>
           )}
         </div>

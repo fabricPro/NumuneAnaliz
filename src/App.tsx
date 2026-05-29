@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   Ruler,
   Calculator,
@@ -51,12 +51,17 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("analiz");
   const [state, setState] = useState<AnalizState>(createInitialState);
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [records, setRecords] = useState<SavedRecord[]>(() => listRecords());
+  const [records, setRecords] = useState<SavedRecord[]>([]);
   const [flash, setFlash] = useState<{ text: string; ok: boolean } | null>(null);
   const flashTimer = useRef<number | undefined>(undefined);
 
   const set = (patch: Partial<AnalizState>) => setState((s) => ({ ...s, ...patch }));
   const r = useMemo(() => calcAll(state), [state]);
+
+  const refresh = () => void listRecords().then(setRecords);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const showFlash = (text: string, ok = true) => {
     setFlash({ text, ok });
@@ -64,14 +69,14 @@ export default function App() {
     flashTimer.current = window.setTimeout(() => setFlash(null), 2800);
   };
 
-  const handleSave = () => {
-    const res = saveRecord(state, r.total, currentId);
+  const handleSave = async () => {
+    const res = await saveRecord(state, r.total, currentId);
     if (res.ok && res.record) {
       setCurrentId(res.record.id);
-      setRecords(listRecords());
+      refresh();
       showFlash(`Kaydedildi: ${res.record.ad}`);
     } else {
-      showFlash("Kaydedilemedi — depolama dolu olabilir (fotoğraflar?)", false);
+      showFlash("Kaydedilemedi: " + (res.error ?? "bilinmeyen hata"), false);
     }
   };
 
@@ -89,10 +94,10 @@ export default function App() {
     showFlash(`Yüklendi: ${rec.ad}`);
   };
 
-  const handleDelete = (id: string) => {
-    deleteRecord(id);
+  const handleDelete = async (id: string) => {
+    await deleteRecord(id);
     if (currentId === id) setCurrentId(null);
-    setRecords(listRecords());
+    refresh();
   };
 
   const currentName = records.find((x) => x.id === currentId)?.ad;
