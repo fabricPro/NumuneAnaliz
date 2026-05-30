@@ -6,7 +6,7 @@ import { C } from "../theme";
 import { Field } from "./Field";
 
 const MAX_CONTENTS = 6;
-const ELYAF_LIST = ["PES", "PA", "CO", "LI", "WO", "AC", "VI", "EL", "SE", "WS", "ME"];
+const ELYAF_LIST = ["PES", "LI", "CO", "VIS", "PAN", "WO"];
 
 interface InfoPanelProps {
   info: IplikInfo;
