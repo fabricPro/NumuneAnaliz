@@ -7,13 +7,15 @@ import {
   FilePlus,
   FileText,
   Grid3x3,
+  Sliders,
   CheckCircle2,
   AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { calcAll } from "./lib/calc";
 import { yeniIplik, DEFAULT_INFO } from "./lib/factory";
-import { defaultDesen } from "./lib/desen";
+import { defaultDesen, normalizeDesen } from "./lib/desen";
+import { defaultTarak, normalizeTarak } from "./lib/tarak";
 import type { AnalizState, Iplik } from "./lib/types";
 import { listRecords, saveRecord, deleteRecord, type SavedRecord } from "./lib/storage";
 import { C } from "./theme";
@@ -22,8 +24,9 @@ import { AnalizTab } from "./components/AnalizTab";
 import { MaliyetTab } from "./components/MaliyetTab";
 import { KayitlarTab } from "./components/KayitlarTab";
 import { DesenTab } from "./components/DesenTab";
+import { TarakTab } from "./components/TarakTab";
 
-type Tab = "analiz" | "maliyet" | "desen" | "kayitlar";
+type Tab = "analiz" | "tarak" | "maliyet" | "desen" | "kayitlar";
 
 function createInitialState(): AnalizState {
   return {
@@ -42,13 +45,15 @@ function createInitialState(): AnalizState {
       ekMal: "0",
     },
     desen: defaultDesen(),
+    tarak: defaultTarak(),
   };
 }
 
 const TABS: { k: Tab; l: string; short: string; I: LucideIcon }[] = [
   { k: "analiz", l: "1 · Analiz", short: "Analiz", I: Ruler },
-  { k: "maliyet", l: "2 · Maliyet", short: "Maliyet", I: Calculator },
+  { k: "tarak", l: "2 · Tarak", short: "Tarak", I: Sliders },
   { k: "desen", l: "3 · Desen", short: "Desen", I: Grid3x3 },
+  { k: "maliyet", l: "4 · Maliyet", short: "Maliyet", I: Calculator },
   { k: "kayitlar", l: "Kayıtlar", short: "Kayıtlar", I: FolderOpen },
 ];
 
@@ -125,18 +130,15 @@ export default function App() {
   };
 
   const handleLoad = (rec: SavedRecord) => {
-    // Eski kayitlarda info / contents / desen olmayabilir -> normalize et
-    const normalize = (arr: Iplik[]) =>
-      arr.map((it) => ({
-        ...it,
-        info: it.info ?? { ...DEFAULT_INFO },
-        contents: it.contents ?? [],
-      }));
+    // Eski kayitlarda info olmayabilir -> normalize et (yoksa row.info.acik coker)
+    const withInfo = (arr: Iplik[]) =>
+      arr.map((it) => ({ ...it, info: it.info ?? { ...DEFAULT_INFO } }));
     setState({
       ...rec.state,
-      cozgu: normalize(rec.state.cozgu),
-      atki: normalize(rec.state.atki),
-      desen: rec.state.desen ?? defaultDesen(),
+      cozgu: withInfo(rec.state.cozgu),
+      atki: withInfo(rec.state.atki),
+      desen: normalizeDesen(rec.state.desen),
+      tarak: normalizeTarak(rec.state.tarak),
     });
     setCurrentId(rec.id);
     setTab("analiz");
@@ -326,7 +328,25 @@ export default function App() {
             state={state}
             set={set}
             setState={setState}
-            onNext={() => setTab("maliyet")}
+            onNext={() => setTab("tarak")}
+          />
+        )}
+        {tab === "tarak" && (
+          <TarakTab
+            tarak={state.tarak}
+            onChange={(tt) => set({ tarak: tt })}
+            onSendToDesen={(info) => {
+              // Tarak hesabını desen'in warpCount ve raporX'ine yansıt — kullanıcı sonra ince ayar yapar
+              const wc = Math.max(2, Math.min(120, info.warpCount));
+              setState((s) => ({
+                ...s,
+                desen: { ...s.desen, warpCount: wc },
+              }));
+              setTab("desen");
+              showFlash(
+                `Desen'e aktarıldı: ${info.cozguSiklik.toFixed(2)} tel/cm · ${info.raporCm.toFixed(2)} cm · warp ${wc}`,
+              );
+            }}
           />
         )}
         {tab === "maliyet" && <MaliyetTab state={state} set={set} r={r} />}
