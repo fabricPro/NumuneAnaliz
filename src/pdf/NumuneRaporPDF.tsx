@@ -170,6 +170,15 @@ function IplikTablo({
                   ölçüm: {nf(uz, 0)} cm × {nf(num(row.olcum.adet), 0)} / {nf(ag, 1)} mg
                 </Text>
               ) : null}
+              {row.info?.fason ? (
+                <Text style={[s.sub, { color: P.warn }]}>
+                  fason:{" "}
+                  {[row.info.fasonFirma, row.info.fasonIslem, row.info.fasonFiyat]
+                    .map((v) => (v ?? "").toString().trim())
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
+                </Text>
+              ) : null}
             </View>
             <Text style={[s.td, { flex: COLS[2].flex }, s.right]}>{nf(num(row.sik), 1)}</Text>
             <Text style={[s.td, { flex: COLS[3].flex }, s.right]}>{nf(num(row.fiyat), 2)}</Text>
@@ -324,9 +333,6 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
           ? { t: "Sınırda — kontrol et", c: P.warn }
           : { t: "Tutmuyor — gözden geçir", c: P.bad };
 
-  const tumIplikler = [...state.cozgu, ...state.atki];
-  const fasonlu = tumIplikler.filter((it) => it.info?.fason);
-
   const maliyetKalemleri: Array<[string, number]> = [
     ["İplik (çözgü + atkı)", r.topI],
     ["İşçilik (KDV dahil)", r.fasI],
@@ -461,21 +467,6 @@ export function NumuneRaporPDF({ state, r }: { state: AnalizState; r: CalcResult
             ))}
           </View>
         </View>
-
-        {fasonlu.length > 0 && (
-          <View style={s.section}>
-            <Text style={s.secTitle}>Fason İşlemler (bilgi — maliyete dahil değil)</Text>
-            {fasonlu.map((it) => (
-              <View key={it.id} style={s.kv}>
-                <Text style={s.kvLabel}>{it.info.iplikAdi || it.info.firmaAdi || "İplik"}</Text>
-                <Text style={s.kvVal}>
-                  {it.info.fasonFirma || "—"} · {it.info.fasonIslem || "—"}
-                  {it.info.fasonFiyat ? ` · ${it.info.fasonFiyat}` : ""}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
 
         {state.photos.length > 0 && (
           <View style={s.section} wrap={false}>
