@@ -31,6 +31,7 @@ import {
   validateLoop,
   addLoop,
   removeLoopAt,
+  updateLoopCount,
   clearLoops,
   insertRow,
   deleteRow,
@@ -278,10 +279,29 @@ function PickRow({
   const iroW = d.iroCount * CELL + (d.iroCount - 1) * 2;
   const totalContentW = armurW + GRID_GAP_PX + iroW;
 
-  const handleRemoveLoop = () => {
-    if (!marker) return;
-    const idx = (d.loops ?? []).indexOf(marker.loop);
-    if (idx >= 0) onChange(removeLoopAt(d, idx));
+  // Section 33: Marker click artık loop kaldırmaz — count edit eder.
+  // Kaldırma sadece Döngüler kartından (LoopRow × butonu).
+  const loopIdx = marker ? (d.loops ?? []).indexOf(marker.loop) : -1;
+  const adjustCount = (delta: number) => {
+    if (!marker || marker.kind !== "DO" || loopIdx < 0) return;
+    onChange(updateLoopCount(d, loopIdx, marker.count + delta));
+  };
+  const stepBtnStyle: React.CSSProperties = {
+    width: 18,
+    height: 18,
+    padding: 0,
+    border: "1px solid rgba(232,103,79,0.5)",
+    borderRadius: 3,
+    background: "rgba(255,255,255,0.7)",
+    color: "#e8674f",
+    fontFamily: "ui-monospace, monospace",
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   return (
@@ -311,19 +331,17 @@ function PickRow({
 
       {isMarker ? (
         <div
-          onClick={handleRemoveLoop}
-          title="Tıkla → bu döngüyü kaldır"
           style={{
             width: totalContentW,
             height: CELL,
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            gap: 8,
             padding: "0 10px",
             borderRadius: 3,
             background: "rgba(232,103,79,0.18)",
             border: "1px solid rgba(232,103,79,0.4)",
-            cursor: "pointer",
+            cursor: "default",
             userSelect: "none",
             fontFamily: "ui-monospace, monospace",
             fontSize: 11,
@@ -332,9 +350,57 @@ function PickRow({
           }}
         >
           <Repeat size={12} color="#e8674f" />
-          <span style={{ color: "#e8674f" }}>
-            {marker!.kind === "DO" ? `DO  ${marker!.count}` : "NEXT"}
-          </span>
+          {marker!.kind === "DO" ? (
+            <>
+              <span style={{ color: "#e8674f" }}>DO</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  adjustCount(-1);
+                }}
+                disabled={marker!.count <= MIN_LOOP_COUNT}
+                title="Tekrarı azalt"
+                style={{
+                  ...stepBtnStyle,
+                  opacity: marker!.count <= MIN_LOOP_COUNT ? 0.4 : 1,
+                  cursor:
+                    marker!.count <= MIN_LOOP_COUNT ? "not-allowed" : "pointer",
+                }}
+              >
+                −
+              </button>
+              <span
+                style={{
+                  minWidth: 18,
+                  textAlign: "center",
+                  color: "#e8674f",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {marker!.count}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  adjustCount(1);
+                }}
+                disabled={marker!.count >= MAX_LOOP_COUNT}
+                title="Tekrarı artır"
+                style={{
+                  ...stepBtnStyle,
+                  opacity: marker!.count >= MAX_LOOP_COUNT ? 0.4 : 1,
+                  cursor:
+                    marker!.count >= MAX_LOOP_COUNT ? "not-allowed" : "pointer",
+                }}
+              >
+                +
+              </button>
+            </>
+          ) : (
+            <span style={{ color: "#e8674f" }}>NEXT</span>
+          )}
           <span
             style={{
               marginLeft: "auto",
@@ -344,7 +410,9 @@ function PickRow({
               color: C.dim,
             }}
           >
-            {marker!.kind === "DO" ? `↺${marker!.count}×  döngü başlar` : "döngü biter"}
+            {marker!.kind === "DO"
+              ? `↺${marker!.count}×  döngü başlar`
+              : "döngü biter"}
           </span>
         </div>
       ) : (
@@ -702,7 +770,7 @@ function LoopForm({ desen: d, onChange }: DesenTabProps) {
 // Desen önizleme — döngüleri açar
 // ============================================================
 
-function DesenPreview({ d }: { d: DesenState }) {
+function DesenPreview({ d, colored }: { d: DesenState; colored: boolean }) {
   const matrix = computeDesen(d.tahar, d.armur, d.weftCount);
   const expanded = expandPicks(d);
   const fullSeq: number[] = [];
@@ -732,6 +800,11 @@ function DesenPreview({ d }: { d: DesenState }) {
         {Array.from({ length: totalRows }).map((_, top) => {
           const idx = totalRows - 1 - top;
           const p = fullSeq[idx];
+          // Section 33: Renkli mod ON → boş hücre atkı'nın iro rengiyle dolar.
+          const iroIdx = ((d.iroData?.[p] ?? 1) - 1) % IRO_COLORS.length;
+          const emptyBg = colored
+            ? IRO_COLORS[(iroIdx + IRO_COLORS.length) % IRO_COLORS.length]
+            : "transparent";
           return (
             <div key={top} style={{ display: "flex" }}>
               {Array.from({ length: totalCols }).map((__, col) => {
@@ -743,7 +816,7 @@ function DesenPreview({ d }: { d: DesenState }) {
                     style={{
                       width: PREV,
                       height: PREV,
-                      background: filled ? C.text : "transparent",
+                      background: filled ? C.text : emptyBg,
                       borderRight: `0.5px solid ${C.line}`,
                       borderBottom: `0.5px solid ${C.line}`,
                     }}
@@ -788,6 +861,10 @@ function DesenInfo({ d }: { d: DesenState }) {
 // ============================================================
 
 export function DesenTab({ desen: d, onChange }: DesenTabProps) {
+  // Section 33: Desen önizlemesi için renkli mod toggle (boş hücreyi atkı iro
+  // rengiyle doldur). Lokal state — persist YOK.
+  const [colored, setColored] = useState(false);
+
   const dimStep =
     (dim: "warpCount" | "weftCount" | "frameCount" | "iroCount"): ((v: number) => void) =>
     (v) =>
@@ -873,10 +950,39 @@ export function DesenTab({ desen: d, onChange }: DesenTabProps) {
       </Card>
 
       <Card title="Desen — döngüler expand edilmiş" icon={<Grid3x3 size={16} color={C.text} />}>
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 10,
+            flexWrap: "wrap",
+          }}
+        >
           <DesenInfo d={d} />
+          <button
+            type="button"
+            onClick={() => setColored((v) => !v)}
+            title="Boş hücreleri atkı iro rengiyle doldur"
+            style={{
+              marginLeft: "auto",
+              fontSize: 12,
+              padding: "5px 12px",
+              borderRadius: 6,
+              border: `1px solid ${colored ? C.accent : C.line}`,
+              background: colored
+                ? `color-mix(in oklch, ${C.accent} 18%, transparent)`
+                : C.panel,
+              color: colored ? C.accent : C.text,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontWeight: colored ? 600 : 400,
+            }}
+          >
+            Renkli: {colored ? "açık" : "kapalı"}
+          </button>
         </div>
-        <DesenPreview d={d} />
+        <DesenPreview d={d} colored={colored} />
       </Card>
     </>
   );

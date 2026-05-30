@@ -186,6 +186,24 @@ export function removeLoopAt(s: DesenState, idx: number): DesenState {
   return { ...s, loops: (s.loops ?? []).filter((_, i) => i !== idx) };
 }
 
+/** Bir döngünün tekrar sayısını (count) günceller. MIN/MAX arasında clamp. */
+export function updateLoopCount(
+  s: DesenState,
+  idx: number,
+  newCount: number,
+): DesenState {
+  const clamped = Math.max(
+    MIN_LOOP_COUNT,
+    Math.min(MAX_LOOP_COUNT, Math.round(newCount)),
+  );
+  return {
+    ...s,
+    loops: (s.loops ?? []).map((lp, i) =>
+      i === idx ? { ...lp, count: clamped } : lp,
+    ),
+  };
+}
+
 export function clearLoops(s: DesenState): DesenState {
   return { ...s, loops: [] };
 }
