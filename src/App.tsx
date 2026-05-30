@@ -51,9 +51,9 @@ function createInitialState(): AnalizState {
 
 const TABS: { k: Tab; l: string; short: string; I: LucideIcon }[] = [
   { k: "analiz", l: "1 · Analiz", short: "Analiz", I: Ruler },
-  { k: "tarak", l: "2 · Tarak", short: "Tarak", I: Sliders },
+  { k: "maliyet", l: "2 · Maliyet", short: "Maliyet", I: Calculator },
   { k: "desen", l: "3 · Desen", short: "Desen", I: Grid3x3 },
-  { k: "maliyet", l: "4 · Maliyet", short: "Maliyet", I: Calculator },
+  { k: "tarak", l: "4 · Tarak", short: "Tarak", I: Sliders },
   { k: "kayitlar", l: "Kayıtlar", short: "Kayıtlar", I: FolderOpen },
 ];
 
